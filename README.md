@@ -9,164 +9,87 @@
 
 PollySystem is a robust infrastructure management system built for managing Docker-based deployments across multiple machines in a network. It provides a modular, plugin-based architecture with real-time monitoring and management capabilities.
 
-## System Architecture
+## 🌟 Features
 
-### Core Components
+### Core Functionality
+- **Machine Management**
+  - SSH key-based authentication
+  - Automatic key generation and distribution
+  - Health monitoring and status tracking
 
-#### Backend (FastAPI)
+- **Deployment Management**
+  - Docker container deployment
+  - Docker Compose support
+  - Dynamic subdomain allocation
+  - Automated health checks
+  - Container logs and metrics
+  - Start/Stop/Restart capabilities
 
-1. **Plugin System**
-   - Modular architecture allowing easy extension
-   - Plugin lifecycle management (initialization, cleanup)
-   - Dependency resolution between plugins
-   - Hot-reloading support in development
+- **Monitoring & Alerting**
+  - Real-time resource monitoring
+  - Container health tracking
+  - Custom alert thresholds
+  - Multi-channel notifications (Slack, Telegram)
+  - Historical metrics and trends
+  - Grafana dashboards
 
-2. **Authentication System**
-   - JWT-based authentication with role-based access control
-   - Rate limiting and brute force protection
-   - Session management and token refresh
-   - Secure password hashing using bcrypt
+- **Security**
+  - SSL/TLS encryption
+  - Rate limiting and DDoS protection
+  - Secure header configuration
+  - Audit logging
 
-3. **Core Plugins**
+- **Backup System**
+  - Automated backups
+  - Multiple storage backends (local, S3)
+  - Configurable retention policies
+  - One-click restoration
+  - Backup verification
 
-   a. **Machines Plugin**
-   - SSH-based machine management
-   - Real-time health monitoring
-   - Secure key management
-   - Command execution and automation
-   - System metrics collection (CPU, Memory, Disk)
+### Additional Features
+- Modern React frontend with real-time updates
+- RESTful API with comprehensive documentation
+- Prometheus metrics integration
+- Granular access control
+- Detailed system logging
+- Performance optimization
 
-   b. **Docker Plugin**
-   - Container lifecycle management
-   - Image registry integration
-   - Docker Compose support
-   - Container health monitoring
-   - Volume and network management
-   - Real-time logs and metrics
+## 🛠 Technology Stack
 
-   c. **Monitoring Plugin**
-   - Prometheus metrics integration
-   - Alert rules and notifications
-   - Historical data retention
-   - Custom metric definitions
-   - Dashboard integration
-
-4. **State Management**
-   - Redis-based caching and real-time updates
-   - Distributed locking mechanism
-   - Event propagation system
-   - Data persistence
-
-#### Frontend (React)
-
-1. **Plugin Architecture**
-   - Dynamic plugin loading
-   - Shared component registry
-   - Plugin state management
-   - Inter-plugin communication
-
-2. **Core Features**
-   - Real-time updates using WebSocket
-   - Responsive dashboard design
-   - Dark/Light theme support
-   - Error boundary implementation
-   - Loading state management
-
-3. **Plugin UIs**
-   
-   a. **Machine Management**
-   - Machine status dashboard
-   - SSH key management interface
-   - Command execution console
-   - System metrics visualization
-
-   b. **Docker Management**
-   - Container management interface
-   - Image registry browser
-   - Log viewer with filtering
-   - Resource usage graphs
-   - Compose file editor
-
-   c. **Monitoring Dashboard**
-   - Real-time metrics graphs
-   - Alert management interface
-   - Custom dashboard creation
-   - Metric exploration tools
-
-## Implementation Details
-
-### Backend Structure
-
-```
-backend/
-├── app/
-│   ├── core/               # Core framework components
-│   │   ├── auth.py        # Authentication system
-│   │   ├── config.py      # Configuration management
-│   │   ├── exceptions.py  # Custom exception handling
-│   │   └── plugin_manager.py # Plugin system
-│   ├── plugins/           # Plugin implementations
-│   │   ├── machines/      # Machine management
-│   │   ├── docker/        # Docker operations
-│   │   └── monitoring/    # System monitoring
-│   └── main.py           # Application entry point
-```
-
-### Frontend Structure
-
-```
-frontend/
-├── src/
-│   ├── components/        # Shared components
-│   ├── hooks/            # Custom React hooks
-│   ├── plugins/          # Plugin implementations
-│   └── App.tsx          # Main application
-```
-
-## Key Features
-
-1. **Security**
-   - Role-based access control
-   - Secure credential storage
-   - SSL/TLS encryption
-   - Rate limiting
-   - Audit logging
-
-2. **Scalability**
-   - Horizontal scaling support
-   - Redis-based caching
-   - Connection pooling
-   - Asynchronous operations
-
-3. **Monitoring**
-   - Real-time metrics
-   - Custom alert rules
-   - Historical data analysis
-   - Performance monitoring
-   - Health checks
-
-4. **Reliability**
-   - Automatic failover
-   - Error recovery
-   - Transaction management
-   - Data backup support
-
-## Technical Requirements
+### Frontend
+- React 18+
+- TypeScript
+- TailwindCSS
+- React Query
+- React Router
+- Lucide Icons
+- Chart.js
 
 ### Backend
 - Python 3.11+
 - FastAPI
+- SQLAlchemy
+- Pydantic
+- Paramiko (SSH)
+- Docker SDK
+- Redis\KeyDB
+
+### Infrastructure
+- Nginx
+- PostgreSQL\Supabase
 - Redis
 - Docker
 - Prometheus
+- Grafana
 
-### Frontend
-- Node.js 18+
-- React 18
-- TypeScript 5
-- Vite
+### Monitoring
+- Prometheus
+- Grafana
+- Custom Python monitors
+- Alert manager
 
-### Infrastructure
+## 📋 Prerequisites
+
 - Docker and Docker Compose
 - Redis
 - Prometheus
