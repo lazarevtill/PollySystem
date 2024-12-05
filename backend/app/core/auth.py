@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import bcrypt
 from app.core.config import get_settings
+from app.core.exceptions import AuthenticationError
 
 security = HTTPBearer()
 settings = get_settings()
@@ -16,7 +17,7 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({
         "exp": expire,
@@ -24,11 +25,10 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
         "type": "access"
     })
     
-    # Using HS256 for HMAC-SHA256 signing
     encoded_jwt = jwt.encode(
         to_encode, 
         settings.SECRET_KEY, 
-        algorithm="HS256"
+        algorithm=settings.ALGORITHM
     )
     return encoded_jwt
 
@@ -38,7 +38,7 @@ def verify_token(token: str) -> Dict[str, Any]:
         payload = jwt.decode(
             token, 
             settings.SECRET_KEY, 
-            algorithms=["HS256"]
+            algorithms=[settings.ALGORITHM]
         )
         
         # Additional security checks
@@ -46,6 +46,14 @@ def verify_token(token: str) -> Dict[str, Any]:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token type"
+            )
+        
+        # Check expiration
+        exp = payload.get("exp")
+        if not exp or datetime.fromtimestamp(exp) < datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired"
             )
         
         return payload
@@ -78,6 +86,8 @@ async def get_current_user(
     """Get current user from JWT token"""
     try:
         payload = verify_token(credentials.credentials)
+        if not payload.get("sub"):
+            raise AuthenticationError("User ID not found in token")
         return payload
     except Exception as e:
         raise HTTPException(
@@ -85,12 +95,6 @@ async def get_current_user(
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-# Additional security utilities
-def generate_secure_token(length: int = 32) -> str:
-    """Generate a secure random token"""
-    import secrets
-    return secrets.token_urlsafe(length)
 
 class RateLimiter:
     """Simple rate limiter implementation"""
@@ -123,3 +127,6 @@ class RateLimiter:
         
         self.requests[key].append(now)
         return True
+
+# Initialize rate limiter
+rate_limiter = RateLimiter()

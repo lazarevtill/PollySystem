@@ -128,27 +128,6 @@ class AuthenticationError(PollySystemException):
             error_code="AUTHENTICATION_ERROR"
         )
 
-class AuthorizationError(PollySystemException):
-    """Raised when there's an authorization error"""
-    def __init__(
-        self,
-        message: str = "Not authorized",
-        resource: Optional[str] = None,
-        action: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
-    ):
-        super().__init__(
-            message=message,
-            details={
-                "resource": resource,
-                "action": action,
-                **(details or {})
-            },
-            error_code="AUTHORIZATION_ERROR"
-        )
-        self.resource = resource
-        self.action = action
-
 class APIError(HTTPException):
     """Custom API error with additional data"""
     def __init__(
