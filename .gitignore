@@ -16,3 +16,4 @@ backend/app/plugins/commands/__pycache__/*
 /backend/app/__pycache__
 frontend/package-lock.json
 frontend/styles/output.css
+full-code.txt
