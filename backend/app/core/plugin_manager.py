@@ -1,63 +1,110 @@
 # backend/app/core/plugin_manager.py
-from typing import Dict, List, Type
+from typing import Dict, Optional, Type, Any
+from fastapi import FastAPI, APIRouter
 import importlib
 import pkgutil
-import inspect
-from fastapi import APIRouter
-from pydantic import BaseModel
+import logging
+from contextlib import asynccontextmanager
 
-class PluginMetadata(BaseModel):
-    """Plugin metadata including its capabilities and requirements"""
-    name: str
-    version: str
-    description: str
-    dependencies: List[str] = []
-    requires_auth: bool = False
+from app.plugins.base import Plugin
+from .exceptions import PluginError
 
-class BasePlugin:
-    """Base class for all plugins"""
-    metadata: PluginMetadata
-    router: APIRouter
+logger = logging.getLogger(__name__)
 
-    @classmethod
-    def get_metadata(cls) -> PluginMetadata:
-        """Return plugin metadata"""
-        raise NotImplementedError()
-
-    @classmethod
-    def initialize(cls) -> 'BasePlugin':
-        """Initialize plugin instance"""
-        raise NotImplementedError()
+class PluginMetadata:
+    """Metadata for a plugin"""
+    def __init__(
+        self,
+        name: str,
+        version: str,
+        description: str,
+        dependencies: list[str] = None,
+        requires_auth: bool = True
+    ):
+        self.name = name
+        self.version = version
+        self.description = description
+        self.dependencies = dependencies or []
+        self.requires_auth = requires_auth
 
 class PluginManager:
-    """Manages plugin discovery, loading, and lifecycle"""
     def __init__(self):
-        self.plugins: Dict[str, BasePlugin] = {}
-        self.routers: Dict[str, APIRouter] = {}
+        self.plugins: Dict[str, Plugin] = {}
+        self.app: Optional[FastAPI] = None
+        self._initialized = False
 
-    def discover_plugins(self, plugins_package='app.plugins'):
-        """Discover all available plugins"""
-        package = importlib.import_module(plugins_package)
+    def register_app(self, app: FastAPI):
+        """Register the FastAPI application"""
+        self.app = app
+
+    async def discover_plugins(self):
+        """Discover and load all available plugins"""
+        if self._initialized:
+            return
+
+        if not self.app:
+            raise PluginError("No FastAPI application registered")
+
+        logger.info("Discovering plugins...")
         
-        for _, name, ispkg in pkgutil.iter_modules(package.__path__):
-            if ispkg:
-                module = importlib.import_module(f'{plugins_package}.{name}')
-                for item_name, item in inspect.getmembers(module):
-                    if (inspect.isclass(item) and 
-                        issubclass(item, BasePlugin) and 
-                        item != BasePlugin):
-                        try:
-                            plugin = item.initialize()
-                            metadata = item.get_metadata()
-                            self.plugins[metadata.name] = plugin
-                            self.routers[metadata.name] = plugin.router
-                        except Exception as e:
-                            print(f"Failed to load plugin {name}: {str(e)}")
+        # Import all plugin modules
+        import app.plugins as plugins_package
+        for _, name, _ in pkgutil.iter_modules(plugins_package.__path__):
+            try:
+                module = importlib.import_module(f"app.plugins.{name}")
+                
+                # Look for plugin class
+                plugin_class = None
+                for attr_name in dir(module):
+                    attr = getattr(module, attr_name)
+                    if isinstance(attr, type) and issubclass(attr, Plugin) and attr != Plugin:
+                        plugin_class = attr
+                        break
 
-    def get_plugin(self, name: str) -> BasePlugin:
-        """Get plugin instance by name"""
+                if plugin_class:
+                    # Get plugin metadata
+                    metadata = plugin_class.get_metadata()
+                    
+                    # Check dependencies
+                    for dep in metadata.dependencies:
+                        if dep not in self.plugins:
+                            raise PluginError(f"Plugin {name} depends on {dep} which is not loaded")
+                    
+                    # Initialize plugin
+                    plugin = plugin_class()
+                    await plugin.initialize()
+                    
+                    # Store plugin
+                    self.plugins[metadata.name] = plugin
+                    
+                    logger.info(f"Loaded plugin: {metadata.name} v{metadata.version}")
+                
+            except Exception as e:
+                logger.error(f"Failed to load plugin {name}: {str(e)}")
+                raise PluginError(f"Plugin {name} failed to load: {str(e)}")
+
+        self._initialized = True
+        logger.info(f"Loaded {len(self.plugins)} plugins")
+
+    async def cleanup_plugins(self):
+        """Cleanup all plugins"""
+        logger.info("Cleaning up plugins...")
+        for plugin in self.plugins.values():
+            try:
+                await plugin.cleanup()
+            except Exception as e:
+                logger.error(f"Error cleaning up plugin: {str(e)}")
+
+        self.plugins.clear()
+        self._initialized = False
+
+    def get_plugin(self, name: str) -> Optional[Plugin]:
+        """Get a plugin by name"""
         return self.plugins.get(name)
 
     def get_all_routers(self) -> Dict[str, APIRouter]:
         """Get all plugin routers"""
-        return self.routers
+        return {name: plugin.router for name, plugin in self.plugins.items()}
+
+# Global plugin manager instance
+plugin_manager = PluginManager()
