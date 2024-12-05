@@ -1,8 +1,14 @@
+# app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+
 from app.core.config import settings
+from app.core.database import Base, engine
 from app.plugins import load_plugins
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="PollySystem", version="1.0.0")
 
@@ -22,4 +28,4 @@ load_plugins(app)
 def health_check():
     return {"status": "healthy"}
 
-logger.info("PollySystem backend started.")
+logger.info("PollySystem backend started")

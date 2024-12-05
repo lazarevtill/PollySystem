@@ -1,0 +1,1 @@
+export { EnhancedMachineCard } from './EnhancedMachineCard';
