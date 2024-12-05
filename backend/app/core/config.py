@@ -1,5 +1,5 @@
 # backend/app/core/config.py
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 from functools import lru_cache
 import os
@@ -59,37 +59,17 @@ class Settings(BaseSettings):
     DOCKER_REGISTRY: Optional[str] = None
     DOCKER_REGISTRY_USERNAME: Optional[str] = None
     DOCKER_REGISTRY_PASSWORD: Optional[str] = None
-    DOCKER_INSTALL_SCRIPT: str = """
-        sudo apt-get update && \
-        sudo apt-get install -y \
-            apt-transport-https \
-            ca-certificates \
-            curl \
-            gnupg \
-            lsb-release && \
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
-        sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-        sudo apt-get update && \
-        sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-    """
-
-    # Metrics
-    METRICS_COLLECTION_INTERVAL: int = 30  # seconds
-    METRICS_RETENTION_DAYS: int = 30
+    
+    # Prometheus Metrics
     ENABLE_PROMETHEUS: bool = True
     PROMETHEUS_PORT: int = 9090
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
-        @classmethod
-        def parse_env_file(cls, env_file: str) -> None:
-            env_path = Path(env_file)
-            if env_path.exists():
-                return env_path.read_text()
-            return None
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="allow"
+    )
 
     def get_redis_url(self) -> str:
         """Get Redis connection URL"""
@@ -107,6 +87,7 @@ class Settings(BaseSettings):
         directories = [
             Path(self.PLUGIN_CONFIG_DIR),
             Path(self.LOG_FILE).parent if self.LOG_FILE else None,
+            Path("logs")
         ]
         
         for directory in directories:
