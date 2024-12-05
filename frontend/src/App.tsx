@@ -1,34 +1,31 @@
-// src/App.tsx
 import React from 'react';
-import { usePlugins } from './hooks/usePlugins';
+import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
+import Dashboard from './pages';
+import Machines from './pages/machines';
+import './App.css';
 
-const App: React.FC = () => {
-  const { plugins, loading, error } = usePlugins();
-
-  if (loading) {
-    return <div>Loading plugins...</div>;
-  }
-
-  if (error) {
-    return <div>Error loading plugins: {error.message}</div>;
-  }
-
+function App() {
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">PollySystem Dashboard</h1>
-      
-      <div className="grid grid-cols-1 gap-6">
-        {plugins.map(plugin => (
-          <div key={plugin.metadata.name}>
-            <h2 className="text-xl font-semibold mb-4">
-              {plugin.metadata.description}
-            </h2>
-            <plugin.Component />
-          </div>
-        ))}
+    <Router>
+      <div style={{ display: 'flex', height: '100vh' }}>
+        <div style={{ width: '250px', background: '#f4f4f4', padding: '10px' }}>
+          <h2>PollySystem</h2>
+          <nav>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              <li><NavLink to="/" style={{ textDecoration: 'none', color: '#333' }}>Status</NavLink></li>
+              <li><NavLink to="/machines" style={{ textDecoration: 'none', color: '#333' }}>Hosts</NavLink></li>
+            </ul>
+          </nav>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/machines" element={<Machines />} />
+          </Routes>
+        </div>
       </div>
-    </div>
+    </Router>
   );
-};
+}
 
 export default App;
